@@ -27,6 +27,7 @@ This function creates a web component that can be used within your HTML. This wi
        |         name         |      String      |  null   |         Overwrites the default name, must be a valid web components name.          |
        |  connectedCallback   |     Function     |  null   |  Function to run on the component's connectedCallback. The `this` context is the component.   |
        | disconnectedCallback |     Function     |  null   | Function to run on the component's disconnectedCallback. The `this` context is the component. |
+       
        The default naming scheme for component names is: uix-[name-of-func]
 ### Stores
 Stores are UIX's state management system. A store contains a value, and can be subscribed to, allowing for code to be ran when a value changes.
