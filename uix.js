@@ -118,7 +118,7 @@ export const CreateComponent = (component, options) => {
         ;
         /**
          * Allows a component to be given a unique state context. This code will be ran within the component's constructor. The this context of the function is the componentInstance.
-         * This basically creates a store, where within the component function, you can do this.[name you game] and access the store. This must be called within the component initialization, or it wont work. (eg. not after a render call)
+         * This basically creates a store, where within the component function, you can do this.[name you gave] and access the store. This must be called within the component initialization, or it wont work. (eg. not after a render call)
          */
         createState(name, value) {
             __classPrivateFieldGet(this, _ComponentInstance_state, "f")[name] = new Store(value);
@@ -297,7 +297,7 @@ class UIX_IF extends HTMLElement {
     constructor() {
         super();
         const exp = new Function(`return ${this.getAttribute("exp")}`)();
-        if (!exp)
+        if (exp == null)
             throw new Error("UIX: No exp attribute on an uix-if element.");
         this.exp = String(exp);
         this.showing = false;
