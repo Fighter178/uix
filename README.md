@@ -5,7 +5,7 @@ UIX is a UI framework that has a variety of features. Some notable ones are:
 3. A readable brace syntax
 4. Runs natively in the browser
 
-You are required to use Typescript.
+You should use Typescript.
 UIX was heavily inspired by a few frameworks, namely Svelte and Vue.
 ## Docs
 For guides, scroll down.
