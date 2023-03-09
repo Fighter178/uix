@@ -6,7 +6,7 @@ UIX is a UI framework that has a variety of features. Some notable ones are:
 4. Runs natively in the browser
 
 UIX was heavily inspired by a few frameworks, namely Svelte and Vue.
-## Notes
+## Things to know/keep in mind
 - You do not have to use a module bundler, you can use the CDN (https://cdn.jsdelivr.net/gh/Fighter178/uix/uix.min.js), and import it like an ES6 module in a script tag. Like this: 
     ```html
         <script type="module">
@@ -17,11 +17,17 @@ UIX was heavily inspired by a few frameworks, namely Svelte and Vue.
             import {CreateComponent, Store /* etc */} from "https://cdn.jsdelivr.net/gh/Fighter178/uix/uix.min.js";
         </script>
    ```
+   Note, you can also use the NPM url (https://cdn.jsdelivr.net/npm/@fighter178/uix@latest/uix.min.js).
 - Typescript is heavily recommended, but not required.
-https://cdn.jsdelivr.net/gh/Fighter178/uix/uix.js## Docs
+- See the github repo: [here](https://github.com/Fighter178/uix)
+- **A user must have JavaScript enabled for UIX to function _at all_.**, unless someone wants to write a server side renderer, which I won't because I have no experience writing something like that. But if you want to, then by all means, do it.
+- UIX is still in beta. Expect some major and breaking changes. 
+
+## Docs
 For guides, scroll down.
 ### CreateComponent function
 This function creates a web component that can be used within your HTML. This will always extend `HTMLElement`. This function takes to parameters: `component` and `options`.
+UIX components do support the `<slot>` element, so you can include the HTML defined in the body of the element, in the shadow itself.
 #### Parameters
  
    - `component`: A function that returns the HTML for the  component. It accepts the following arguments:
@@ -29,6 +35,7 @@ This function creates a web component that can be used within your HTML. This wi
      - `shadow`: The element's shadow root. This will always be defined, even if the shadow root is closed.
      - `functions`: An object with many helper functions. This contains: `onInit`, `createState`, `setState`, `getState`, `render`, and `getThis`. The `onInit` function takes a function, and calls it when the component is initialized, not on subsequent renders. The `createState` function takes two arguments, the name of the state, and an initial value. `getState` takes the name of the state, and returns a store with the value. If the state does not exist, it returns a store-like object. The second argument to the `getState` function will be the value of this store-like object. The `updateState` takes the name of the state, and a new value. You can also just get the state and override the value there. The `getThis` function gets the `this` context for the component. Useful for defining methods for the component. The `render` function calls the `component` function again, so as to get the new value. Any `onInit` functions will not be called. 
     - Options: A object for options for the component.
+
        |         Name         |       Type       | Default |                                         Description                                         |
        | :------------------: | :--------------: | :-------: | :-----------------------------------------------------------------------------------------: |
        |    renderOnChange    |     Boolean      |  False  |                         Renders the component on its change event.                          |
@@ -49,6 +56,84 @@ A store is a javascript class, so use the `new` keyword to initialize them.
   - when: Either `"beforeChange`" or `"afterChange"`, these are self-explanatory.
   - value: Value of the store at the current time.
 - unsubscribe: Function that takes a callback, and filters through the subscribers, removing the callback from the array of subscribers, meaning the callback is no longer triggered when the value changes.
+### Directives
+UIX has a directive system somewhat inspired by Vue.
+You can use directives by adding the '@' sign just before the attribute name, however this can be changed.
+#### Using a directive
+You use a directive just like any other HTML attribute, however to set one programmatically, you must use the `setDirective` function to do so.
+##### Listening for click events:
+```html
+<button @click="alert('You clicked me!')">Click me!</button>
+```
+However, directives are most useful in components, as with the `evaluateDirectives` function, you can set the `this` context for the directive. Using this, you can set the `this` context to the component itself.
+Here is a basic example:
+app.ts
+```ts
+import { CreateComponent, ComponentFunction, evaluateDirectives, type ComponentInstance } from "uix";
+// Simple function to turn a number to an array with the length of that number.
+const range = (to:number,val:any=null)=>{
+    const res = [];
+    for(let i=0;i<to;i++) {
+        res.push(val);
+    };
+    return res;
+}
+const button:ComponentFunction = ({onClick=''},shadow,{getThis})=>{
+    const self:appComponent = getThis();
+    self.handleClick = ()=>{
+        // This is very weak sandboxing. Don't use in production. 
+        new Function('window','eval', 'Function', 'document', String(onClick)).call(null, range(4, null));
+    };
+    setTimeout(()=>{
+        // We put this code in a setTimeout so the directives are evaluated after the render. Also this is not in an onInit call, so the directives are re-evaluated after each render.
+        evaluateDirectives(Array.from(shadow.children), self);
+    });
+    return `<button @click='this.handleClick()'>
+    <slot>Button</slot>
+    </button>`;
+};
+CreateComponent(button);
+interface appComponent extends ComponentInstance {
+    // This must be an optional parameter, otherwise you get an error.
+    handleClick?:()=>void
+}
+```
+And then in your HTML,
+```html
+<uix-button onClick="alert('Click'!)"></uix-button>
+```
+**Note: all directives are processed as Javascript, without sanitization. This does not include custom directives.**
+#### Creating a custom directive
+You can create your own directives by using the `createCustomDirective` function.
+Returns: A promise with void. It will reject if an error occurred.
+Parameters: 
+- `name`: Name for your directive. This should <u>not</u> be prefixed with the prefix.
+- `callback`: The callback for your directive. This is ran each time the directive is encountered, either by `evaluateDirectives` or on page load. It takes to arguments:
+  - `directiveValue`: This is the value of the directive. It is a string.
+  - `element`: The element the directive is on. It is a `HTMLElement` or `ComponentInstance`. 
+Note, for you directive to be registered and executed, it must be registered **before** the `DOMContentLoaded` event. If you must define it after, you have few options. One of those is to use `renderPage` or `silentRenderPage` to rerender the entire page again, but this causes major performance hits. Another option is to use `evaluateDirectives` after you define your directive. Like so: 
+   - ```ts
+        import {evaluateDirectives, createCustomDirective} from "uix";
+        // simulating your directive taking a long time to be registered. 
+        setTimeout(()=>{
+            createCustomDirective("hide", (value, element)=>{
+                element.style.display =  "none";
+            });
+            // Evaluate the body of the page. If you know where your directive is, use that element (or fill the array with the elements if there are multiple. Doing specific elements improves performance.).
+            evaluateDirectives(Array.from(document.body.children));
+        },5000);
+     ```
+
+Please note: Until you call `evaluateDirectives` on a late creation, your directive will **not** be ran on _any_ element. This is why it is a good idea to define them as soon as you can.
+#### Setting the directive prefix
+You can use the `setDirectivePrefix` function to set the directive prefix for **all** directives. This must be called **before** the `DOMContentLoaded` event, otherwise you will need to evaluate the directives again.
+Usage: 
+```ts
+import {setDirectivePrefix} from "uix";
+setDirectivePrefix("*") // Now, you can use *click instead of @click.
+```
+This might be useful if you are using UIX with other frameworks that use the `@` for the directive prefix, and they interfere. 
+You must define a prefix, or the function will throw an error. This is to make it clear when you are using directives and when you are not.
 ## Guides
 Here are the guides for UIX.
 ### Components 
@@ -76,17 +161,18 @@ You can easily create dynamic components like this.
 dynamic.ts
 ```ts
 import {type ComponentFunction, CreateComponent} from "uix";
-const reactive:ComponentFunction = ({name="User"})=>{
+const dynamic:ComponentFunction = ({name="User"})=>{
     return `<p>Hello ${name}!</p>`
 }
-createComponent(reactive);
+createComponent(dynamic);
 ```
 index.html
 ```html
 <p>Empty:</p>
-<uix-reactive></uix-reactive>
+<!-- Note, you can use the self-closing syntax, if no <slot> elements are involved. -->
+<uix-dynamic />
 <p>With name:</p>
-<uix-reactive name="UIX"></uix-reactive>
+<uix-dynamic name="UIX" />
 ```
 Would give the result:
 
@@ -94,7 +180,26 @@ Empty:
 Hello User!
 With name:
 Hello UIX!
-
+#### Customizing the Name
+You can customize the nam of a component using the options parameter.
+user.ts
+```ts
+import {CreateComponent} from "uix";
+const user = ({user="User"})=>{
+    return `<h1>Hello ${user}!</h1>`;
+};
+CreateComponent(user, {name:"my-user"});
+```
+index.html
+```html
+<my-user user="UIX"></my-user>
+```
+This allows you to write a component in a single line, like this:
+user.ts
+```ts
+import {CreateComponent} from "uix";
+CreateComponent(({user="UIX"})=>`<h1>Hello ${user}!</h1>`, {name:"my-user"});
+```
 #### A full, reactive component
 You can also create reactive components with UIX, utilizing its state API.
 reactive.ts
@@ -145,10 +250,11 @@ const reactive: ComponentFunction = (attributes, shadow, {getThis,render, setSta
 		<button @click="this.handleAddClick()">Add Value</button>
 		<button @click='this.handleRemove()'>Remove Last</button>
 		<ul>
-			${(()=>{try{return getState("data").value.map((value: number)=>/* html */`<li>${value}</li>`)}catch(e){};})()}
+			${getState("data", 0).value.map((value: number)=>/* html */`<li>${value}</li>`)}
+            <!-- The above will throw a warning/error. It has no effect on the app itself -->
 		</ul>
 	`.replaceAll(',','');
-	// We must do this because of a bug. Also the try-catch because the state is defined within an onInit call.
+    // The replaceAll is called due to a bug in UIX. It will be fixed soon.
 };
 CreateComponent(reactive);
 ```

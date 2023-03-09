@@ -2,7 +2,8 @@
  * @copyright 2023 Jonathon Woolston
  * @file uix.ts
  * @description UIX, a browser-native UI framework.
- * @author Fighter178 (Jonathon Woolston)
+ * @author Jonathon Woolston (Fighter178)
+ * @version 0.0.4
  */
 /** */
 // Polyfills
@@ -252,12 +253,12 @@ export interface ComponentInstance extends HTMLElement {
     js:string|Function,
     parent:HTMLElement
 }
-// An extremely basic plugin system.
+// An extremely basic plugin system. This is an experimental feature, and is not stable at all. That is why it is not in the docs.
 const componentPlugins:Array<Function> = [];
 const componentRenderPlugins:Array<Function> = [];
 const loadPlugins:Array<Function> = [];
 /**
- * A way to easily use plugins.
+ * A way to easily use plugins. THIS IS AN EXPERIMENTAL FEATURE.
  * @param {Function} pluginFunction A string which contains the JS to run when the plugin is fired
  * @param {String} on A string indicating on which event to run the plugin
  */
@@ -275,8 +276,8 @@ document.addEventListener("load", (e)=>{
         loadPlugin();
     });
 });
-// State
 
+// State
 type Subscriber<T> = (when: "beforeChange" | "afterChange", v: T) => void;
 
 export class Store<T> {
@@ -477,6 +478,7 @@ export const renderBraceElement = (elem:HTMLElement)=>{
 };
 let directivePrefix = "@";
 export const setDirectivePrefix = (prefix:string)=>{
+    if (!prefix) throw new Error("UIX: You must set a prefix for the directive prefix.");
     directivePrefix = prefix;
 }
 // Brace attributes
@@ -528,7 +530,7 @@ export interface directive {
 }
 const customDirectives:Array<directive> = [];
 const customDirectiveNames:Array<string> = [];
-export const evaluateDirectives = (components?:Array<HTMLElement>, context=window)=>{
+export const evaluateDirectives = (components?:Array<HTMLElement|Element>, context:any=window)=>{
     const eventDirectives = [
         "click",
         "keydown",
@@ -538,7 +540,8 @@ export const evaluateDirectives = (components?:Array<HTMLElement>, context=windo
         "load",
         "render",
         "change",
-        "input"
+        "input",
+        "submit"
     ];
     const stateDirectives = [
         "bind",
@@ -697,14 +700,15 @@ export const evaluateDirectives = (components?:Array<HTMLElement>, context=windo
             } else if (customDirectiveNames.includes(directiveName)) {
                 const index = customDirectiveNames.indexOf(directiveName);
                 const directiveObj = customDirectives[index];
-                if (directiveObj.name !== directiveName) throw new Error("UIX: Directive mismatch.");
+                // Ensure we are running the correct directive. This error should never be triggered, but you never know.
+                if (directiveObj.name !== directiveName) throw new Error(`UIX (internal error): (Custom) Directive mismatch. The directive will not be ran at all. Directive(s): Possibly ${directiveName} or ${directiveObj.name}. If these are the same, something has gone terribly wrong.`);
                 const directiveValue = attribute.value;
                 directiveObj.callback(directiveValue, elem);
-            }
+            };
         };
     });
 };
-export const createCustomDirective = (name:string, callback:(directiveValue:string, element:HTMLElement)=>void):Promise<null>=>{
+export const createCustomDirective = (name:string, callback:(directiveValue:string, element:HTMLElement|ComponentInstance)=>void):Promise<void>=>{
     return new Promise((resolve,reject)=>{
         try {
             customDirectiveNames.push(name);
@@ -712,7 +716,7 @@ export const createCustomDirective = (name:string, callback:(directiveValue:stri
                 name:name,
                 callback:callback
             });
-            resolve(null);
+            resolve();
         } catch (e) {
             reject(e);
         };

@@ -1,8 +1,9 @@
 /**
  * @copyright 2023 Jonathon Woolston
  * @file uix.js
- * @description UIX, a browser-native UI framework.
- * @author Fighter178 (Jonathon Woolston)
+ * @version 0.0.3
+ * @author Jonathon Woolston (Fighter178)
+ * @description UIX, a browser-native UI framework
  */
 /** */
 var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
@@ -236,12 +237,12 @@ export const CreateComponent = (component, options) => {
 };
 ;
 ;
-// An extremely basic plugin system.
+// An extremely basic plugin system. This is an experimental feature, and is not stable at all. That is why it is not in the docs.
 const componentPlugins = [];
 const componentRenderPlugins = [];
 const loadPlugins = [];
 /**
- * A way to easily use plugins.
+ * A way to easily use plugins. THIS IS AN EXPERIMENTAL FEATURE.
  * @param {Function} pluginFunction A string which contains the JS to run when the plugin is fired
  * @param {String} on A string indicating on which event to run the plugin
  */
@@ -469,6 +470,8 @@ export const renderBraceElement = (elem) => {
 };
 let directivePrefix = "@";
 export const setDirectivePrefix = (prefix) => {
+    if (!prefix)
+        throw new Error("UIX: You must set a prefix for the directive prefix.");
     directivePrefix = prefix;
 };
 // Brace attributes
@@ -524,7 +527,8 @@ export const evaluateDirectives = (components, context = window) => {
         "load",
         "render",
         "change",
-        "input"
+        "input",
+        "submit"
     ];
     const stateDirectives = [
         "bind",
@@ -695,11 +699,13 @@ export const evaluateDirectives = (components, context = window) => {
             else if (customDirectiveNames.includes(directiveName)) {
                 const index = customDirectiveNames.indexOf(directiveName);
                 const directiveObj = customDirectives[index];
+                // Ensure we are running the correct directive. This error should never be triggered, but you never know.
                 if (directiveObj.name !== directiveName)
-                    throw new Error("UIX: Directive mismatch.");
+                    throw new Error(`UIX (internal error): (Custom) Directive mismatch. The directive will not be ran at all. Directive(s): Possibly ${directiveName} or ${directiveObj.name}. If these are the same, something has gone terribly wrong.`);
                 const directiveValue = attribute.value;
                 directiveObj.callback(directiveValue, elem);
             }
+            ;
         }
         ;
     });
@@ -712,7 +718,7 @@ export const createCustomDirective = (name, callback) => {
                 name: name,
                 callback: callback
             });
-            resolve(null);
+            resolve();
         }
         catch (e) {
             reject(e);

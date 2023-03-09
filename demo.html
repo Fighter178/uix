@@ -9,12 +9,12 @@
     <script type="module">
         // To use UIX, you must import it. This should be the first script on the page. If you are using a bundler like WebPack or Snowpack, just use the npm name, uix.
         // It is not recommended to import it like this, use a static version in production. Also use minified version as well.
-        import {CreateComponent} from "https://cdn.jsdelivr.net/gh/Fighter178/uix/uix.min.js";
+        import {CreateComponent} from "https://cdn.jsdelivr.net/npm/@fighter178/uix@0.0.3/uix.min.js";
         CreateComponent(({user="User"})=>/*html*/`<h1>Hello ${user}!</h1>`, {
             name:"my-user"
         });
         CreateComponent(({color="black",})=>`<slot /><style>*{color:${color};}</style>`,{name:"style-colored"});
-        window.users = [{username:"Bill", isAdmin:false},{username:"Jill", isAdmin:true}]
+        window.users = [{username:"Bill", isAdmin:false},{username:"Jill", isAdmin:true}];
     </script>
     <style>
         * {
@@ -23,7 +23,12 @@
         }
     </style>
 </head>
+<!-- Using data-brace on the body is not recommended, though there will be no major performance hits if you do. -->
 <body data-brace>
+    <noscript>
+        <h1>This page requires Javascript.</h1>
+        <p>Enable Javascript in your browser's settings.</p>
+    </noscript>
     <uix-ready>
         <!-- Using components -->
         <my-user user="UIX"></my-user>
@@ -44,7 +49,6 @@
         <style-colored>
             <p>And I'm just plain black!</p>
         </style-colored>
-
     </uix-ready>
 </body>
 </html>
