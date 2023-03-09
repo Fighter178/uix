@@ -1,4 +1,10 @@
-
+/**
+ * @copyright 2023 Jonathon Woolston
+ * @file uix.ts
+ * @description UIX, a browser-native UI framework.
+ * @author Fighter178 (Jonathon Woolston)
+ */
+/** */
 // Polyfills
 declare global {
     interface String {

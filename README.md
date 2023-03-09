@@ -5,9 +5,20 @@ UIX is a UI framework that has a variety of features. Some notable ones are:
 3. A readable brace syntax
 4. Runs natively in the browser
 
-You should use Typescript.
 UIX was heavily inspired by a few frameworks, namely Svelte and Vue.
-## Docs
+## Notes
+- You do not have to use a module bundler, you can use the CDN (https://cdn.jsdelivr.net/gh/Fighter178/uix/uix.min.js), and import it like an ES6 module in a script tag. Like this: 
+    ```html
+        <script type="module">
+            // Supports brace syntax, directives, and inbuilt components.
+            import "https://cdn.jsdelivr.net/gh/Fighter178/uix/uix.min.js"; 
+            // OR:
+            // Supports all things via import.
+            import {CreateComponent, Store /* etc */} from "https://cdn.jsdelivr.net/gh/Fighter178/uix/uix.min.js";
+        </script>
+   ```
+- Typescript is heavily recommended, but not required.
+https://cdn.jsdelivr.net/gh/Fighter178/uix/uix.js## Docs
 For guides, scroll down.
 ### CreateComponent function
 This function creates a web component that can be used within your HTML. This will always extend `HTMLElement`. This function takes to parameters: `component` and `options`.
@@ -27,7 +38,7 @@ This function creates a web component that can be used within your HTML. This wi
        |         name         |      String      |  null   |         Overwrites the default name, must be a valid web components name.          |
        |  connectedCallback   |     Function     |  null   |  Function to run on the component's connectedCallback. The `this` context is the component.   |
        | disconnectedCallback |     Function     |  null   | Function to run on the component's disconnectedCallback. The `this` context is the component. |
-       
+
        The default naming scheme for component names is: uix-[name-of-func]
 ### Stores
 Stores are UIX's state management system. A store contains a value, and can be subscribed to, allowing for code to be ran when a value changes.

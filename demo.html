@@ -1,0 +1,50 @@
+<!-- Demo for UIX -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIX Demo</title>
+    <script type="module">
+        // To use UIX, you must import it. This should be the first script on the page. If you are using a bundler like WebPack or Snowpack, just use the npm name, uix.
+        // It is not recommended to import it like this, use a static version in production. Also use minified version as well.
+        import {CreateComponent} from "https://cdn.jsdelivr.net/gh/Fighter178/uix/uix.min.js";
+        CreateComponent(({user="User"})=>/*html*/`<h1>Hello ${user}!</h1>`, {
+            name:"my-user"
+        });
+        CreateComponent(({color="black",})=>`<slot /><style>*{color:${color};}</style>`,{name:"style-colored"});
+        window.users = [{username:"Bill", isAdmin:false},{username:"Jill", isAdmin:true}]
+    </script>
+    <style>
+        * {
+            font-family: sans-serif;
+            margin:none;
+        }
+    </style>
+</head>
+<body data-brace>
+    <uix-ready>
+        <!-- Using components -->
+        <my-user user="UIX"></my-user>
+        <my-user user="Bob"></my-user>
+        <my-user user={users[0].username}></my-user>
+        <uix-if exp="users[0].isAdmin" style="display:none">
+            <p>{users[0].username} is an admin!</p>
+        </uix-if>
+        12 divisible by 6? {12 % 6 == 0 ? "Yes" : "No"} <!-- Using brace syntax -->
+        <br>
+        9 divisible by 2? {9 % 2 == 0 ? "Yes" : "No"}
+        <style-colored color="red">
+            <p>I am red!</p>
+        </style-colored>
+        <style-colored color="blue">
+            <p>And I'm blue!</p>
+        </style-colored>
+        <style-colored>
+            <p>And I'm just plain black!</p>
+        </style-colored>
+
+    </uix-ready>
+</body>
+</html>
