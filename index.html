@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>UIX Demo</title>
+        <script type="module">
+            // To use UIX, you must import it. This should be the first script on the page. If you are using a bundler like WebPack or Snowpack, just use the npm name, uix.
+            import { CreateComponent, Store } from "./uix";
+            /** @type {Store} */
+            const myStore = new Store(1);
+            window.myStore = myStore;
+        </script>
+        <style>
+            * {
+                font-family: sans-serif;
+                margin:none;
+            }
+        </style>
+    </head>
+    <!-- Using data-brace on the body is not recommended, though there will be no major performance hits if you do. -->
+    <body data-brace>
+        <noscript>
+            <h1>This page requires Javascript.</h1>
+            <p>Enable Javascript in your browser's settings.</p>
+        </noscript>
+        <button onclick="myStore.value++">Increment</button>
+        {myStore}
+    </body>
+</html>

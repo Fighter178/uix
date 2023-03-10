@@ -316,7 +316,11 @@ export class Store<T> {
             this.#subscribers = this.#subscribers.filter((v) => v !== func);
         }
     }
-
+    /**
+     *  DO NOT USE THIS IF THE STORE IS IN A BRACE.
+     * 
+     *  Clears all subscribers.
+      */
     clear(): void {
         this.#subscribers = [];
     }
@@ -425,57 +429,52 @@ const skipElements = [
     "head",
     "meta",
 ];
-export const renderBraces = ()=>{
+const renderBraces = () => {
     //@ts-ignore
-    document.querySelectorAll("[data-brace]").forEach((elem: HTMLElement) => {
-        if (!elem.textContent) return;
-        if (elem.hasAttribute("data-brace-skip")) return;
-        const nodeName = elem.nodeName.toLocaleLowerCase();
-        if (skipElements.includes(nodeName)) return;
-        const regex = /{([^]*?)}/g;
-        if (!regex.test(elem.textContent)) return;
-        //@ts-ignore
-        elem.setAttribute("uix-html", elem.innerHTML)
-        //@ts-ignore
-        elem.innerHTML = elem.innerHTML.replace(regex, (_,p1) => {
-            try {
-            const expressionResult: any = new Function(`return ${p1}`).call(window);
-            if (expressionResult instanceof Store) {
-                renderBraceElement(elem);
-                return "";
-            }
-            return expressionResult !== null ? expressionResult : "";
-            } catch (e) {
-                console.error(`UIX (brace error): ${e}`);
-            }
-        });
-    });
-};
-export const renderBraceElement = (elem:HTMLElement)=>{
-    if (elem.hasAttribute("data-brace-skip")) return;
-    const nodeName = elem.nodeName.toLocaleLowerCase();
-    if (skipElements.includes(nodeName)) return;
-    const regex = /{([^]*?)}/g;
-    if (!regex.test(elem.textContent||"")) return;
-    //@ts-ignore
-    elem.setAttribute("uix-html", elem.innerHTML)
-    //@ts-ignore
-    elem.innerHTML = elem.innerHTML.replace(regex, (_,p1) => {
+    document.querySelectorAll('[data-brace]').forEach((elem:HTMLElement) => {
+      if (!elem.textContent) return;
+      if (elem.hasAttribute('data-brace-skip')) return;
+      const nodeName = elem.nodeName.toLowerCase();
+      if (skipElements.includes(nodeName)) return;
+      const regex = /{([^]*?)}/g;
+      if (!regex.test(elem.textContent)) return;
+      // We must encode it to prevent it from being treated as Javascript on some browsers for some reason.
+      elem.setAttribute('uix-html', encodeURI(elem.innerHTML));
+      elem.innerHTML = elem.innerHTML.replace(regex, (_, p1) => {
         try {
-            const expressionResult: any = new Function(`return ${p1}`).call(window);
-            if (expressionResult instanceof Store && !elem.getAttribute("data-brace-reactive")) {
-                expressionResult.subscribe((w,v)=>{
-                    renderBraceElement(elem);
-                });
-                elem.setAttribute("data-brace-reactive", "true");
-            };
-            return expressionResult !== null ? expressionResult : "";
-            
+          const expressionResult = new Function(`return ${p1}`).call(window);
+          let result = expressionResult;
+          if (expressionResult instanceof Store) {
+            renderBraceElement(elem);
+            result = expressionResult.value
+          }
+          return result !== null ? result : '';
         } catch (e) {
-            console.error(`UIX (brace error): ${e}`);
+          console.error(`UIX (brace error): ${e}`);
         }
+      });
     });
-};
+  };
+  
+  const renderBraceElement = (elem:HTMLElement) => {
+    const regex = /{([^]*?)}/g;
+    const content = decodeURI(elem.getAttribute('uix-html')||"");
+    elem.innerHTML = content.replace(regex, (_, p1) => {
+      const expressionResult = new Function(`return ${p1}`).call(window);
+      let result = expressionResult;
+      if (result instanceof Store) {
+        const sub = (w:string,_:any)=>{
+            if (w !== "afterChange") return;
+            expressionResult.unsubscribe(sub)
+            renderBraceElement(elem);
+        }
+        result.subscribe(sub);
+        result = result.value||'';
+      } 
+      return result !== null ? result : '';
+    });
+  };
+  
 let directivePrefix = "@";
 export const setDirectivePrefix = (prefix:string)=>{
     if (!prefix) throw new Error("UIX: You must set a prefix for the directive prefix.");

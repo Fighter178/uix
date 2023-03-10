@@ -1,11 +1,3 @@
-/**
- * @copyright 2023 Jonathon Woolston
- * @file uix.js
- * @version 0.0.3
- * @author Jonathon Woolston (Fighter178)
- * @description UIX, a browser-native UI framework
- */
-/** */
 var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
@@ -295,6 +287,11 @@ export class Store {
             __classPrivateFieldSet(this, _Store_subscribers, __classPrivateFieldGet(this, _Store_subscribers, "f").filter((v) => v !== func), "f");
         }
     }
+    /**
+     *  DO NOT USE THIS IF THE STORE IS IN A BRACE.
+     *
+     *  Clears all subscribers.
+      */
     clear() {
         __classPrivateFieldSet(this, _Store_subscribers, [], "f");
     }
@@ -408,30 +405,30 @@ const skipElements = [
     "head",
     "meta",
 ];
-export const renderBraces = () => {
+const renderBraces = () => {
     //@ts-ignore
-    document.querySelectorAll("[data-brace]").forEach((elem) => {
+    document.querySelectorAll('[data-brace]').forEach((elem) => {
         if (!elem.textContent)
             return;
-        if (elem.hasAttribute("data-brace-skip"))
+        if (elem.hasAttribute('data-brace-skip'))
             return;
-        const nodeName = elem.nodeName.toLocaleLowerCase();
+        const nodeName = elem.nodeName.toLowerCase();
         if (skipElements.includes(nodeName))
             return;
         const regex = /{([^]*?)}/g;
         if (!regex.test(elem.textContent))
             return;
-        //@ts-ignore
-        elem.setAttribute("uix-html", elem.innerHTML);
-        //@ts-ignore
+        // We must encode it to prevent it from being treated as Javascript on some browsers for some reason.
+        elem.setAttribute('uix-html', encodeURI(elem.innerHTML));
         elem.innerHTML = elem.innerHTML.replace(regex, (_, p1) => {
             try {
                 const expressionResult = new Function(`return ${p1}`).call(window);
+                let result = expressionResult;
                 if (expressionResult instanceof Store) {
                     renderBraceElement(elem);
-                    return "";
+                    result = expressionResult.value;
                 }
-                return expressionResult !== null ? expressionResult : "";
+                return result !== null ? result : '';
             }
             catch (e) {
                 console.error(`UIX (brace error): ${e}`);
@@ -439,33 +436,23 @@ export const renderBraces = () => {
         });
     });
 };
-export const renderBraceElement = (elem) => {
-    if (elem.hasAttribute("data-brace-skip"))
-        return;
-    const nodeName = elem.nodeName.toLocaleLowerCase();
-    if (skipElements.includes(nodeName))
-        return;
+const renderBraceElement = (elem) => {
     const regex = /{([^]*?)}/g;
-    if (!regex.test(elem.textContent || ""))
-        return;
-    //@ts-ignore
-    elem.setAttribute("uix-html", elem.innerHTML);
-    //@ts-ignore
-    elem.innerHTML = elem.innerHTML.replace(regex, (_, p1) => {
-        try {
-            const expressionResult = new Function(`return ${p1}`).call(window);
-            if (expressionResult instanceof Store && !elem.getAttribute("data-brace-reactive")) {
-                expressionResult.subscribe((w, v) => {
-                    renderBraceElement(elem);
-                });
-                elem.setAttribute("data-brace-reactive", "true");
-            }
-            ;
-            return expressionResult !== null ? expressionResult : "";
+    const content = decodeURI(elem.getAttribute('uix-html') || "");
+    elem.innerHTML = content.replace(regex, (_, p1) => {
+        const expressionResult = new Function(`return ${p1}`).call(window);
+        let result = expressionResult;
+        if (result instanceof Store) {
+            const sub = (w, _) => {
+                if (w !== "afterChange")
+                    return;
+                expressionResult.unsubscribe(sub);
+                renderBraceElement(elem);
+            };
+            result.subscribe(sub);
+            result = result.value || '';
         }
-        catch (e) {
-            console.error(`UIX (brace error): ${e}`);
-        }
+        return result !== null ? result : '';
     });
 };
 let directivePrefix = "@";

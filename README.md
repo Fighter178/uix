@@ -4,8 +4,9 @@ UIX is a UI framework that has a variety of features. Some notable ones are:
 2. State management system
 3. A readable brace syntax
 4. Runs natively in the browser
-
+5. Small, the minified Javascript is just 14.3 kB. 
 UIX was heavily inspired by a few frameworks, namely Svelte and Vue.
+UIX contains a .ts file, .js and .min.js file in it's bundle. This is to provide CDN compatibility. It is heavily recommended that you use either just the minified javascript, or use a bundler with dead code elimination.
 ## Things to know/keep in mind
 - You do not have to use a module bundler, you can use the CDN (https://cdn.jsdelivr.net/gh/Fighter178/uix/uix.min.js), and import it like an ES6 module in a script tag. Like this: 
     ```html
@@ -298,7 +299,24 @@ Here is a basic example:
 ```
 This renders: What is 1+2? Its 3!
 on the screen.
-Sadly, this is not reactive. You must use JS/TS to update the element if the value has changed.
+<s>Sadly, this is not reactive. You must use JS/TS to update the element if the value has changed</s> - As of 0.0.5, if the value is a store, it will become reactive, like so: 
+
+```ts
+window.myStore = new Store(0)
+setTimeout(()=>{
+    myStore.value = 5
+},1000)
+```
+```html
+<div data-brace>
+   {myStore}
+</div>
+```
+This renders: 0
+Then, after a second: 5
+
+Just be sure not to remove the subscriber that watches for the changes, and to **not** use the Store's `clear` method
+
 **All code within braces is executed as javascript, in the global (window) context, with no sanitation provided. This applies to attribute braces too.**
 If the code does not return a value, `undefined` is rendered.
 #### Attribute Braces
